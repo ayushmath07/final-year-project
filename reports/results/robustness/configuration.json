@@ -1,0 +1,38 @@
+{
+  "base_config": {
+    "companies": 10,
+    "steps": 260,
+    "edge_probability": 0.22,
+    "persistence": 0.2,
+    "propagation": 0.55,
+    "noise_std": 0.1,
+    "shock_size": 2.5,
+    "shocks": 30,
+    "seed": 42,
+    "min_shock_gap": 6,
+    "event_margin": 8,
+    "allow_overlapping_shocks": false
+  },
+  "settings": {
+    "noise_std": [
+      0.05,
+      0.1,
+      0.2,
+      0.35
+    ],
+    "propagation": [
+      0.2,
+      0.35,
+      0.55,
+      0.7
+    ],
+    "shocks": [
+      10,
+      20,
+      30,
+      40
+    ]
+  },
+  "seeds_per_setting": 10,
+  "seed_policy": "development 1000-series; independent test 5000-series"
+}

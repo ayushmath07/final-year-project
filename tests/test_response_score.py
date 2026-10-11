@@ -32,6 +32,12 @@ def test_standardize_states_centers_each_company():
 
     assert np.allclose(result.mean(axis=0), [0.0, 0.0])
 
+
+def test_zero_variance_column_is_stable():
+    result = standardize_states(np.column_stack([np.ones(10), np.arange(10)]))
+    assert np.all(result[:, 0] == 0)
+    assert np.isfinite(result).all()
+
 def test_event_response_strength_uses_delayed_window():
     states = np.zeros((10, 2))
 

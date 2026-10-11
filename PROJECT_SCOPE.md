@@ -1,55 +1,35 @@
-# Step 1 scope freeze
+# Track A scope
 
 ## Title
 
-**Inferring Hidden Economic Connections from Financial Shock Propagation: A
-Synthetic and Real-Data Prototype**
+**Inferring Hidden Economic Connections from Financial Shock Propagation: A Synthetic and Real-Data Prototype**
 
 ## Research question
 
-Can repeated lagged responses after company-specific financial shocks provide
-useful evidence for reconstructing hidden economic connections between
-companies?
+Can repeated lagged responses after company-specific financial shocks provide useful evidence for reconstructing hidden economic connections between companies?
 
-## Objectives
+## Included
 
-1. Generate a synthetic company network with known connections.
-2. Simulate company-specific shocks that travel through that network.
-3. Later, score shock responses and reconstruct the hidden network.
-4. Compare the proposed method with simple baselines.
-5. Demonstrate the same pipeline on a small cached real-data example.
+- Static sparse binary undirected synthetic networks with known ground truth
+- Stable linear shock propagation, noise and deterministic seeds
+- Event-conditioned SRCS, threshold calibration and independent evaluation
+- Random, Pearson, maximum lagged-correlation and Granger-style baselines
+- Robustness experiments for noise, propagation and number of shocks
+- A small real adjusted-price pipeline with market residualization and event evidence
+- Streamlit dashboard, tests, Docker and CI configuration
+- Black-book, demo and viva material
 
-## Step 1 deliverables
+## Excluded Track B work
 
-- A small, reproducible synthetic environment.
-- A true-network figure, a shock-propagation figure, and an architecture figure.
-- Saved synthetic observations and a structured shock-event list.
-- Tests that prove basic simulator correctness.
-- Initial black-book prose and chapter skeleton (kept out of GitHub).
+- Dynamic or directed latent networks
+- Deep learning, graph neural networks and Bayesian network reconstruction
+- Production trading signals, forecasts or automated decisions
+- Claims that market co-response proves causality or a commercial relationship
 
-## Assumptions for the prototype
+## Ground-truth separation rule
 
-- The hidden network is static, sparse, binary, and undirected.
-- A shock affects a company directly, then can affect connected companies later.
-- The simulation uses Gaussian noise and conservative coefficients to stay stable.
-- The true adjacency matrix is retained for evaluation only; later inference code
-  must receive observations and events, not the adjacency matrix.
+Inference functions receive observations and events only. Development adjacency matrices may be used solely to select a threshold. Test adjacency matrices are exposed only to metric functions after inference. Real-data analysis has no ground-truth adjacency and therefore exports rankings rather than recovery metrics.
 
-## Explicit exclusions until later milestones
+## Completion criteria
 
-- SRCS scoring and inferred-network thresholding
-- correlation, lagged-correlation, and Granger-style baselines
-- robustness experiments, real-data analysis, and Streamlit deployment
-- claims of causal direction or confirmed supplier/customer relationships
-
-## Architecture
-
-`hidden graph -> normalized adjacency -> shocks + noise -> company states -> saved observations -> later inference`
-
-## Why correlation alone is insufficient
-
-Two companies can move together because the overall market or a shared news
-event affects both.  This project instead looks for repeated delayed responses
-after company-specific events, while treating any real-data result as ranked
-evidence rather than causal proof.
-
+The essential Track A implementation is complete when the test suite passes, full comparison and robustness outputs are regenerated, genuine price data or an explicit acquisition dependency is documented, the offline dashboard starts, and manuscript claims match recorded results.

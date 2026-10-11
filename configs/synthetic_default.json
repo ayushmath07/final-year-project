@@ -1,0 +1,15 @@
+{
+  "companies": 10,
+  "steps": 260,
+  "edge_probability": 0.22,
+  "persistence": 0.2,
+  "propagation": 0.55,
+  "noise_std": 0.1,
+  "shock_size": 2.5,
+  "shocks": 30,
+  "min_shock_gap": 6,
+  "event_margin": 8,
+  "lag_window": 5,
+  "lag_decay": 0.5,
+  "response_threshold": 1.0
+}

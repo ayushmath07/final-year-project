@@ -1,0 +1,19 @@
+{
+  "source": "Yahoo Finance via yfinance",
+  "tickers": [
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "NVDA",
+    "JPM",
+    "WMT",
+    "XOM",
+    "JNJ",
+    "SPY"
+  ],
+  "start": "2022-01-01",
+  "end": "2026-01-01",
+  "downloaded_at_utc": "2026-10-11T14:32:25.598495+00:00"
+}

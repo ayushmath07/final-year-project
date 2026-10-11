@@ -1,6 +1,12 @@
 .venv/
 __pycache__/
+*.py[cod]
 .pytest_cache/
-*.pyc
-reports/black_book/
+.coverage
+.DS_Store
+.env
+.streamlit/secrets.toml
+reports/_build/
+.chart-data-*/
+*.egg-info/
 
