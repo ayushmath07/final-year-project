@@ -22,7 +22,7 @@ Last updated: 11 October 2026 (Asia/Kolkata)
 - Feature branch: `feat/complete-track-a`
 - Commit author: `Samearth17 <139998526+Samearth17@users.noreply.github.com>`
 - Latest deck: `reports/final_submission/Track_A_Presentation_v3.pptx`
-- PR: pending final commit, push and creation
+- Pull request: https://github.com/ayushmath07/final-year-project/pull/2
 
 ## Exact next commands
 
