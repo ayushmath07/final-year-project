@@ -1,0 +1,9 @@
+{
+  "tickers": ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "JPM", "WMT", "XOM", "JNJ", "SPY"],
+  "market_index": "SPY",
+  "start": "2022-01-01",
+  "end": "2026-01-01",
+  "shock_z_threshold": 2.5,
+  "cooldown_days": 5,
+  "event_window_days": 5
+}

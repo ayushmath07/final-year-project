@@ -1,0 +1,42 @@
+{
+  "input": "/Users/samarth/Documents/final-year-project/data/real/us_large_caps_2022_2025.csv",
+  "market": "SPY",
+  "threshold": 2.5,
+  "cooldown": 5,
+  "event_window": 5,
+  "observations": 1003,
+  "companies": [
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "META",
+    "NVDA",
+    "JPM",
+    "WMT",
+    "XOM",
+    "JNJ"
+  ],
+  "event_count": 196,
+  "verified_real_data": true,
+  "interpretation": "Ranked statistical evidence only; no causal or contractual claim.",
+  "provenance": {
+    "source": "Yahoo Finance via yfinance",
+    "tickers": [
+      "AAPL",
+      "MSFT",
+      "GOOGL",
+      "AMZN",
+      "META",
+      "NVDA",
+      "JPM",
+      "WMT",
+      "XOM",
+      "JNJ",
+      "SPY"
+    ],
+    "start": "2022-01-01",
+    "end": "2026-01-01",
+    "downloaded_at_utc": "2026-10-11T14:32:25.598495+00:00"
+  }
+}

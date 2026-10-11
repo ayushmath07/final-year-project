@@ -1,0 +1,47 @@
+{
+  "config": {
+    "companies": 10,
+    "steps": 260,
+    "edge_probability": 0.22,
+    "persistence": 0.2,
+    "propagation": 0.55,
+    "noise_std": 0.1,
+    "shock_size": 2.5,
+    "shocks": 30,
+    "seed": 42,
+    "min_shock_gap": 6,
+    "event_margin": 8,
+    "allow_overlapping_shocks": false
+  },
+  "dev_seeds": [
+    100,
+    101,
+    102,
+    103,
+    104,
+    105,
+    106,
+    107,
+    108,
+    109
+  ],
+  "test_seeds": [
+    200,
+    201,
+    202,
+    203,
+    204,
+    205,
+    206,
+    207,
+    208,
+    209
+  ],
+  "thresholds": {
+    "Random": 0.0726046038579431,
+    "Pearson": 0.11848499229783613,
+    "Lagged correlation": 0.26028375581995866,
+    "Granger-style": 0.03500225973254333,
+    "SRCS": 0.46678878470778895
+  }
+}

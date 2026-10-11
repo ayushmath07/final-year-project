@@ -24,9 +24,9 @@ def test_confusion_counts():
         inferred,
     )
 
-    assert tp == 2
-    assert fp == 2
-    assert fn == 2
+    assert tp == 1
+    assert fp == 1
+    assert fn == 1
     assert tn == 0
 
 

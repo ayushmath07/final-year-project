@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from src.synthetic_generator import SyntheticConfig, row_normalize, simulate
 
@@ -28,4 +29,15 @@ def test_simulation_has_expected_shape_and_events():
     assert data.states.shape == (80, 6)
     assert len(data.events) == 4
     assert data.shock_matrix.shape == (80, 6)
+
+
+def test_invalid_unstable_configuration_is_rejected():
+    with pytest.raises(ValueError):
+        simulate(SyntheticConfig(persistence=0.6, propagation=0.5))
+
+
+def test_non_overlapping_events_respect_minimum_gap():
+    data = simulate(SyntheticConfig(seed=1, min_shock_gap=6))
+    times = [event[0] for event in data.events]
+    assert min(np.diff(times)) >= 6
 
