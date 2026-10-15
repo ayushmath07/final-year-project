@@ -1,6 +1,6 @@
 # Track A progress
 
-Last updated: 11 October 2026 (Asia/Kolkata)
+Last updated: 15 October 2026 (Asia/Kolkata)
 
 ## Implemented
 
@@ -12,10 +12,14 @@ Last updated: 11 October 2026 (Asia/Kolkata)
 - Real-data cache/download, preprocessing, shock detection, ranking and evidence exports
 - Seven-page Streamlit dashboard with offline cached-data support
 - Tests, Docker, CI, configuration files and submission documentation
+- ML-enhanced edge inference using `HistGradientBoostingClassifier`
+- Fifteen pair-level features with domain-randomized synthetic training data
+- Strict network-seed separation for fitting, threshold calibration and testing
+- ML probabilities, permutation feature importance and real-data candidate ranking
 
 ## Verification status
 
-`python -m pytest -q`: 27 passed in 1.35 seconds on the final cached verification run (the clean first run took 45.44 seconds). Full comparison: 10 development plus 10 independent test seeds. Full robustness: 10 seed pairs for each of 12 settings. Real data: acquisition succeeded for 1,003 observations and the analysis detected 196 events. The Streamlit server started on port 8502 and its health endpoint returned successfully. The 19-page PDF was rendered and visually inspected, its text was extracted successfully, and the 10-slide PPTX passed package, layout, chart and import validation. Docker is unavailable on the verification host, so the image build remains unverified. Streamlit Community Cloud deployment also remains unverified because deployment credentials were not available.
+`python -m pytest -q`: 33 passed in 3.21 seconds in the clean ML verification environment. The upgraded comparison used 40 domain-randomized training networks, 10 disjoint calibration networks and 10 disjoint test networks. ML achieved F1 0.930 ± 0.081 versus deterministic SRCS 0.838 ± 0.126 on the varied test regimes. Real-data ML analysis succeeded on 1,003 genuine observations and 196 detected events; the highest candidate probability was 0.161, below the synthetic calibration cutoff of 0.301, so no real pair was declared an inferred edge. Streamlit startup and its health endpoint were verified on port 8511. Earlier robustness, PDF and slide checks remain valid; Docker and Streamlit Community Cloud deployment remain unverified.
 
 ## Final handoff status
 

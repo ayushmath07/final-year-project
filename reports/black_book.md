@@ -14,7 +14,7 @@
 
 ## Abstract
 
-Economic relationships between companies are often incomplete, private or difficult to observe directly. This project tests a narrow hypothesis: repeated delayed responses after company-specific financial shocks may contain useful evidence about an unobserved connection network. The prototype creates sparse undirected synthetic networks, simulates stable shock propagation and introduces the Shock-Response Connectivity Score (SRCS). SRCS combines lag-decayed response magnitude with consistency across source-company events. Thresholds are calibrated on development simulations and evaluated on independent test seeds. Four reference methods provide context: random ranking, contemporaneous Pearson correlation, maximum lagged correlation and a pairwise Granger-style predictive-gain score. Robustness experiments vary noise, propagation strength and the number of shocks. A separate real-price pipeline removes a broad market component, detects large abnormal returns and ranks candidate connections without claiming causality. The implementation includes reproducible scripts, raw result tables, tests and an offline-capable Streamlit dashboard.
+Economic relationships between companies are often incomplete, private or difficult to observe directly. This project tests whether repeated delayed responses after company-specific financial shocks contain useful evidence about an unobserved connection network. The prototype creates sparse synthetic networks and introduces the interpretable Shock-Response Connectivity Score (SRCS). A histogram gradient-boosting classifier learns a nonlinear combination of 15 pair-level response, correlation, predictive, coverage and volatility features. Complete networks are separated into training, calibration and test seed groups. Reference methods include random ranking, Pearson correlation, maximum lagged correlation, pairwise Granger-style predictive gain and deterministic SRCS. A real-price pipeline ranks candidates without claiming causality. The implementation includes reproducible scripts, raw result tables, tests and an offline-capable Streamlit dashboard.
 
 ## 1 Introduction
 
@@ -28,7 +28,7 @@ The project aims to implement an end-to-end reproducible benchmark, compare SRCS
 
 ### 1.2 Contributions
 
-The implementation contributes an event-conditioned score, explicit development/test separation, edge-level ranking metrics, three repeated robustness studies, a provenance-aware real-data path and an auditable event-evidence export.
+The implementation contributes an event-conditioned score, domain-randomized ML training data, seed-level train/calibration/test separation, an ML edge-probability model, edge-level ranking metrics, three repeated robustness studies, a provenance-aware real-data path and an auditable event-evidence export.
 
 ## 2 Literature Review
 
@@ -72,8 +72,9 @@ The system separates scientific computation from presentation. Reusable modules 
 flowchart LR
   C[Configuration and seed] --> S[Synthetic simulator]
   S --> O[Observations and event list]
-  O --> M[SRCS and baseline scores]
-  M --> T[Development threshold calibration]
+  O --> M[SRCS, baselines and pair features]
+  M --> L[Histogram gradient boosting]
+  L --> T[Development threshold calibration]
   T --> I[Test network inference]
   I --> E[Metrics tables and figures]
   P[Cached or uploaded prices] --> R[Returns and market residuals]
@@ -83,7 +84,7 @@ flowchart LR
 
 ## 5 Methodology
 
-Synthetic development and test seeds never overlap. Every method receives the same observation matrix for a seed. Each method calibrates its own threshold on the same development simulations, preventing the arbitrary reuse of one method's score scale. Precision, recall and F1 count the strict upper triangle so each undirected pair appears once. ROC-AUC and average precision use continuous scores where both classes exist.
+Synthetic training, calibration and test seeds never overlap. Whole networks, rather than individual pair rows, are assigned to a split. Forty training networks span randomized company counts, densities, persistence, propagation, noise, shock sizes and shock counts; ten separate networks calibrate thresholds and ten evaluate final performance. Every method receives the same test observations. Precision, recall and F1 count the strict upper triangle once. ROC-AUC and average precision use continuous scores where both classes exist.
 
 The robustness design changes one primary factor at a time. Noise standard deviation, propagation strength and shock count each have four settings. Ten independent development/test seed pairs are used per setting in the full run. Reports include mean and sample standard deviation.
 
@@ -91,7 +92,7 @@ For real prices, dates are aligned, short missing gaps are forward-filled, log r
 
 ## 6 Implementation
 
-Python modules use NumPy and pandas for numerical work, scikit-learn for ranking metrics, NetworkX for network representations, Matplotlib for saved scientific figures and Plotly plus Streamlit for interaction. All random behavior uses explicit NumPy generators. Invalid shapes, unstable coefficients, non-finite values, impossible shock schedules and missing data produce explicit errors.
+Python modules use NumPy and pandas for numerical work and scikit-learn for ranking metrics and `HistGradientBoostingClassifier`. The classifier uses balanced class weights, 15 leaves, a minimum of 12 samples per leaf, learning rate 0.05 and L2 regularization 1.0. NetworkX supports network representations, Matplotlib saves scientific figures, and Plotly plus Streamlit provide interaction. All random behavior uses explicit seeds. Invalid shapes, unstable coefficients, non-finite values, impossible shock schedules, split leakage and missing data produce explicit errors.
 
 The dashboard contains overview, synthetic experiment, shock detection, inferred network, method comparison, real-data analysis, and methodology/limitations pages. It can load the packaged cache without internet access and permits a user-supplied adjusted-price CSV.
 
@@ -101,7 +102,7 @@ The default synthetic experiment uses ten companies, 260 time steps, edge probab
 
 ### 7.1 Baseline comparison
 
-Across ten independent test seeds, SRCS achieved mean F1 0.951 (SD 0.048), followed by maximum lagged correlation at 0.921 (SD 0.070), Granger-style predictive gain at 0.917 (SD 0.051), Pearson correlation at 0.623 (SD 0.050), and random ranking at 0.349 (SD 0.096). Mean SRCS ROC-AUC was 0.999 and mean average precision was 0.998. These results apply only to the configured synthetic generator.
+Across ten independent, domain-randomized test networks, the ML classifier achieved mean F1 0.930 (SD 0.081), ROC-AUC 0.988 and PR-AUC 0.982. Deterministic SRCS achieved F1 0.838 (SD 0.126), followed by Granger-style gain at 0.783, lagged correlation at 0.688, Pearson at 0.456 and random ranking at 0.371. Pair features use direction-invariant minimum, maximum and asymmetry summaries so arbitrary company numbering cannot change an undirected prediction. Held-out permutation analysis ranked Granger gain and minimum/maximum event-response strength highest. These results demonstrate recovery across unseen simulator regimes, not verified accuracy on real economic relationships.
 
 The comparison must be reported without assuming SRCS wins. ROC-AUC evaluates ranking across false-positive rates, while average precision is informative for sparse positive edges. Thresholded F1 measures the calibrated classification decision.
 
@@ -113,25 +114,25 @@ Interpretation should distinguish a change in mean performance from variability 
 
 ### 7.3 Real-data demonstration
 
-The verified cache contains 1,003 adjusted daily closing-price observations from 3 January 2022 through 31 December 2025. It covers ten US-listed companies and SPY, with Yahoo Finance via `yfinance` recorded as the source. The detector found 196 events. GOOGL-AMZN ranked first with SRCS 0.2352 and AAPL-MSFT ranked second with 0.2232. GOOGL-NVDA ranked last with 0.0192 and provides an ambiguous low-response case. These rankings may reflect shared sectors or news and do not establish direct economic links.
+The verified cache contains 1,003 adjusted daily closing-price observations from 3 January 2022 through 31 December 2025. It covers ten US-listed companies and SPY, with Yahoo Finance via `yfinance` recorded as the source. The detector found 196 events. GOOGL-AMZN ranked first by ML probability at 0.1607, followed by MSFT-META at 0.1273; NVDA-XOM ranked last at 0.0010. All were below the synthetic calibration cutoff of 0.3005. The cutoff was not lowered after viewing real results. These rankings may reflect shared sectors or news and do not establish direct economic links.
 
 Two high-ranked cases and one lower or ambiguous case should be discussed only when the cached observations support them. An ambiguous case is scientifically useful because a high market response can arise from shared sector exposure or news rather than a direct economic relationship.
 
 ## 8 Testing and Deployment
 
-Unit tests cover simulator reproducibility and validation, zero-variance standardization, event windows, thresholding, single-count metrics, every baseline, price preprocessing, shock cooldowns, cache provenance and an independent calibration-to-inference integration path. GitHub Actions installs the declared dependencies, executes the tests, runs quick experiment variants and starts Streamlit headlessly.
+Thirty-three tests cover simulator reproducibility and validation, zero-variance standardization, event windows, thresholding, single-count metrics, every baseline, ML feature extraction, company-relabel invariance, corpus determinism, split-leakage rejection, probability symmetry, preprocessing, shock cooldowns, cache provenance and independent calibration-to-inference paths. GitHub Actions installs the dependencies, runs the tests and quick experiments, and starts Streamlit headlessly.
 
 The Docker image uses Python 3.12 and exposes port 8501. Streamlit Community Cloud deployment requires selecting this repository and `app.py`; no runtime secret is required for cached data. External data refresh remains a separate online action.
 
 ## 9 Limitations Ethics and Risks
 
-The synthetic data-generating process is linear and static. Real economic connections may be directed, time-varying and nonlinear. Price responses occur at daily resolution and can overlap. Market residualization removes only a linear common component. Extreme observations may reflect earnings, macroeconomic news, data errors or volatility changes. Multiple candidate pairs increase the chance of spurious rankings. Granger-style prediction does not establish structural causality.
+The synthetic data-generating process is linear and static. The classifier can therefore learn simulator assumptions rather than real economics. Pair rows from one graph are dependent, even though seed-level splitting prevents direct leakage. Real economic connections may be directed, time-varying and nonlinear. Market residualization removes only a linear common component. Extreme observations may reflect earnings, macroeconomic news, data errors or volatility changes. Multiple candidate pairs increase spurious-ranking risk. Neither Granger-style prediction nor an ML probability establishes structural causality.
 
 Ethically, the dashboard must avoid presenting inferred links as facts about companies. Users should retain provenance, dates and uncertainty and should validate candidates against independent public evidence. The system is an educational research prototype, not investment advice.
 
 ## 10 Conclusion and Future Work
 
-Track A establishes a reproducible way to test event-conditioned reconstruction under known ground truth and to compare it with transparent alternatives. The real-data extension demonstrates how the same score can organize event evidence while preserving a strict interpretation boundary. Future work may investigate direction, changing networks, sector controls, bootstrap uncertainty and formal multiple-testing corrections. These extensions belong outside Track A and should follow validation of the current benchmark.
+The project establishes a reproducible hybrid method: interpretable event-conditioned measurements are combined by a nonlinear supervised classifier, while known ground truth remains restricted to synthetic labels. The real-data extension organizes candidate evidence while preserving a strict interpretation boundary. Future work should acquire point-in-time real relationship labels, evaluate probability calibration and temporal transfer, and add sector controls, uncertainty intervals and multiple-testing correction before considering sequence encoders or graph neural networks.
 
 ## References
 
