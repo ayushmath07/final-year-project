@@ -15,6 +15,7 @@ import streamlit as st
 from src.baselines import all_method_scores
 from src.data_loader import load_price_csv
 from src.evaluation import calibrate_threshold, precision_recall_f1
+from src.ml_inference import generate_diverse_corpus, predict_edge_scores, train_ml_network_model
 from src.network_builder import threshold_scores
 from src.preprocessing import preprocess_prices
 from src.response_score import build_srcs_matrix, event_evidence_table
@@ -35,6 +36,14 @@ def synthetic_run(config_dict: dict) -> tuple:
     scores = build_srcs_matrix(data.states, data.events)
     inferred = threshold_scores(scores, threshold)
     return data, scores, inferred, threshold
+
+
+@st.cache_resource(show_spinner="Training the ML edge classifier on diverse synthetic networks…")
+def dashboard_ml_model():
+    """Train once per app process using disjoint domain-randomized seed groups."""
+    training = generate_diverse_corpus(range(0, 24))
+    calibration = generate_diverse_corpus(range(100, 108))
+    return train_ml_network_model(training, calibration)[0]
 
 
 def network_figure(adjacency: np.ndarray, title: str) -> go.Figure:
@@ -101,11 +110,25 @@ elif page == "Shock Detection":
 
 elif page == "Inferred Network":
     st.title("True and Inferred Networks")
+    ml_model = dashboard_ml_model()
+    ml_scores, _ = predict_edge_scores(ml_model.estimator, data.states, data.events)
+    ml_inferred = threshold_scores(ml_scores, ml_model.threshold)
     left, right = st.columns(2)
     left.plotly_chart(network_figure(data.adjacency, "True network (evaluation only)"), use_container_width=True)
-    right.plotly_chart(network_figure(inferred, "Inferred network"), use_container_width=True)
-    st.plotly_chart(px.imshow(scores, text_auto=".2f", color_continuous_scale="Viridis",
-                              title="SRCS score heatmap"), use_container_width=True)
+    method = right.radio("Inference method", ["ML (HistGradientBoosting)", "Deterministic SRCS"])
+    selected_network = ml_inferred if method.startswith("ML") else inferred
+    right.plotly_chart(network_figure(selected_network, f"{method} inferred network"), use_container_width=True)
+    sr, ml = st.columns(2)
+    sr.plotly_chart(px.imshow(scores, text_auto=".2f", color_continuous_scale="Viridis",
+                              title="SRCS feature heatmap"), use_container_width=True)
+    ml.plotly_chart(px.imshow(ml_scores, text_auto=".2f", zmin=0, zmax=1,
+                              color_continuous_scale="Blues", title="ML edge-probability heatmap"),
+                    use_container_width=True)
+    st.dataframe(pd.DataFrame([
+        {"method": "SRCS", **precision_recall_f1(data.adjacency, inferred)},
+        {"method": "ML (HistGradientBoosting)", **precision_recall_f1(data.adjacency, ml_inferred)},
+    ]), use_container_width=True)
+    st.caption("The ML model was trained on seeds 0–23 and calibrated on seeds 100–107; the displayed seed is not used in fitting unless you choose one of those reserved seeds.")
 
 elif page == "Method Comparison":
     st.title("Method Comparison")
@@ -134,9 +157,14 @@ elif page == "Real-Data Analysis":
             abnormal, z_returns = preprocess_prices(prices, market)
             real_events = detect_shocks(z_returns)
             real_scores = build_srcs_matrix(z_returns.to_numpy(), to_srcs_events(real_events))
-            candidates = [{"company_a": z_returns.columns[i], "company_b": z_returns.columns[j], "score": real_scores[i, j]}
+            ml_model = dashboard_ml_model()
+            real_ml_scores, _ = predict_edge_scores(
+                ml_model.estimator, z_returns.to_numpy(), to_srcs_events(real_events)
+            )
+            candidates = [{"company_a": z_returns.columns[i], "company_b": z_returns.columns[j],
+                           "ml_edge_probability": real_ml_scores[i, j], "srcs_score": real_scores[i, j]}
                           for i in range(len(z_returns.columns)) for j in range(i+1, len(z_returns.columns))]
-            ranked = pd.DataFrame(candidates).sort_values("score", ascending=False)
+            ranked = pd.DataFrame(candidates).sort_values("ml_edge_probability", ascending=False)
             st.metric("Detected shocks", len(real_events)); st.dataframe(ranked.head(20), use_container_width=True)
             st.plotly_chart(px.imshow(real_scores, x=z_returns.columns, y=z_returns.columns,
                                       color_continuous_scale="Viridis", title="Candidate-connection SRCS"), use_container_width=True)

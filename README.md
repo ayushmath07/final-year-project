@@ -1,6 +1,6 @@
 # Inferring Hidden Economic Connections from Financial Shock Propagation
 
-A reproducible Track A prototype that asks whether repeated delayed responses to company-specific shocks contain useful evidence for reconstructing a sparse, static, undirected company network.
+A reproducible hybrid statistical/ML prototype that asks whether repeated delayed responses to company-specific shocks contain useful evidence for reconstructing a sparse, static, undirected company network. The deterministic SRCS remains an interpretable measurement and baseline; a regularized `HistGradientBoostingClassifier` learns how to combine SRCS, correlation, lagged-prediction and event-response evidence into an edge probability.
 
 The repository contains a complete synthetic benchmark, four baselines, robustness sweeps, a real-price workflow, an offline-capable Streamlit dashboard, tests and final-submission material. Real-data rankings are exploratory statistical evidence. They do **not** prove causality, supplier relationships, ownership, contracts or direction of influence.
 
@@ -34,13 +34,23 @@ If acquisition fails, upload an adjusted-close CSV in the dashboard. The first c
 5. Symmetrize directed evidence without consulting the hidden adjacency matrix.
 6. Calibrate a threshold on separate development seeds.
 7. Evaluate on independent seeds, counting each undirected pair once.
-8. Compare random ranking, Pearson, maximum lagged correlation, pairwise Granger-style predictive gain and SRCS.
-9. Repeat experiments across noise, propagation and shock count, reporting mean and standard deviation.
-10. For real prices, compute log returns, remove a market-model component, detect cooldown-separated shocks and rank candidate pairs.
+8. Build one labelled row per undirected synthetic company pair without exposing adjacency as an input feature.
+9. Train a histogram gradient-boosting edge classifier on domain-randomized simulations, calibrate its probability cutoff on disjoint seeds, and evaluate once on independent test seeds.
+10. Compare random ranking, Pearson, maximum lagged correlation, pairwise Granger-style predictive gain, deterministic SRCS and ML edge probabilities.
+11. Repeat experiments across noise, propagation and shock count, reporting mean and standard deviation.
+12. For real prices, compute log returns, remove a market-model component, detect cooldown-separated shocks and rank candidate pairs using both SRCS and the synthetic-trained ML model.
+
+## Machine-learning design
+
+The ML input contains 15 pair-level measurements: SRCS, absolute Pearson correlation, maximum lagged correlation, Granger-style predictive gain, direction-invariant minimum/maximum response means and consistency, response asymmetry, event coverage/balance, pair volatility and standardized-series difference. The label is the synthetic hidden edge (`0` or `1`). Labels are added only after feature extraction.
+
+Training simulations vary company count, graph density, persistence, propagation, noise, shock magnitude and shock count. Whole simulation seeds—not individual pair rows—are assigned to training, calibration or testing, preventing pairs from one hidden graph from leaking across splits. `configs/ml_default.json` records the ranges and model hyperparameters.
+
+Real-market probabilities are exploratory transfer results because verified real-world edge labels are not available. They rank response similarity under the synthetic-trained model; they do not establish a business link or causality.
 
 ## Reproducible outputs
 
-- `reports/results/comparison/`: raw and summary method metrics, rankings, configuration and F1 plot
+- `reports/results/comparison/`: raw/summary metrics, rankings, ML training rows, held-out permutation feature importance, configuration and F1 plot
 - `reports/results/robustness/`: raw trials, grouped mean/SD tables, configurations and three robustness figures
 - `reports/results/real_data/`: detected events, candidate rankings, event evidence, heatmap, case figures and provenance-aware metadata
 - `reports/figures/`: true network, inferred network, propagation and SRCS heatmap

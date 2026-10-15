@@ -62,7 +62,8 @@ def add_results_table(doc: Document) -> None:
         cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
     for index, row in enumerate(rows):
         cells = table.add_row().cells
-        values = [row["method"], f'{float(row["precision_mean"]):.3f}', f'{float(row["recall_mean"]):.3f}',
+        method = "ML gradient boosting" if row["method"] == "ML (HistGradientBoosting)" else row["method"]
+        values = [method, f'{float(row["precision_mean"]):.3f}', f'{float(row["recall_mean"]):.3f}',
                   f'{float(row["f1_mean"]):.3f} ({float(row["f1_std"]):.3f})', f'{float(row["roc_auc_mean"]):.3f}']
         for cell, value in zip(cells, values):
             cell.text = value; cell.vertical_alignment = WD_CELL_VERTICAL_ALIGNMENT.CENTER
@@ -75,7 +76,8 @@ def add_results_table(doc: Document) -> None:
 def configure(doc: Document) -> None:
     section = doc.sections[0]
     section.page_width, section.page_height = Inches(8.5), Inches(11)
-    section.top_margin = section.bottom_margin = Inches(0.75)
+    section.top_margin = Inches(0.75)
+    section.bottom_margin = Inches(0.95)
     section.left_margin = section.right_margin = Inches(0.85)
     normal = doc.styles["Normal"]
     normal.font.name = "Times New Roman"; normal.font.size = Pt(10.5)
@@ -154,6 +156,8 @@ def build() -> Path:
                 doc.add_page_break()
             else:
                 doc.add_paragraph()
+            if heading == "7.1 Baseline comparison":
+                doc.add_page_break()
             doc.add_heading(heading, level=level)
             if heading == "4 Proposed System Design":
                 add_figure(doc, ROOT / "reports/figures/system_architecture.png", "Figure 1 System architecture")
@@ -163,12 +167,13 @@ def build() -> Path:
                 add_figure(doc, ROOT / "reports/figures/inferred_network.png", "Figure 4 Inferred network")
             elif heading == "7.1 Baseline comparison":
                 add_results_table(doc)
-                add_figure(doc, ROOT / "reports/results/comparison/method_comparison_f1.png", "Figure 5 Method comparison on independent test seeds")
+                doc.add_page_break()
+                add_figure(doc, ROOT / "reports/results/comparison/method_comparison_f1.png", "Figure 5 Method comparison on independent test seeds", 5.8)
             elif heading == "7.2 Robustness":
                 for number, stem, label in ((6, "noise_std", "noise"), (7, "propagation", "propagation strength"), (8, "shocks", "shock count")):
-                    add_figure(doc, ROOT / f"reports/results/robustness/f1_vs_{stem}.png", f"Figure {number} F1 versus {label}", 5.8)
+                    add_figure(doc, ROOT / f"reports/results/robustness/f1_vs_{stem}.png", f"Figure {number} F1 versus {label}", 5.2)
             elif heading == "7.3 Real-data demonstration":
-                add_figure(doc, ROOT / "reports/results/real_data/real_data_srcs_heatmap.png", "Figure 9 Real-data SRCS heatmap", 5.5)
+                add_figure(doc, ROOT / "reports/results/real_data/real_data_srcs_heatmap.png", "Figure 9 Real-data SRCS heatmap", 5.0)
             continue
         if line.startswith("- "):
             flush(); p = doc.add_paragraph(f"•  {line[2:]}")
