@@ -115,8 +115,22 @@ elif page == "Method Comparison":
     if result_path.exists():
         comparison = pd.read_csv(result_path)
         st.dataframe(comparison, use_container_width=True)
-        st.plotly_chart(px.bar(comparison, x="method", y="f1_mean", error_y="f1_std",
-                               title="F1 across independent test seeds"), use_container_width=True)
+        chart_data = comparison.rename(columns={
+            "f1_mean": "F1",
+            "accuracy_mean": "Accuracy",
+            "loss_mean": "Loss",
+        })
+        comparison_figure = px.bar(
+            chart_data,
+            x="method",
+            y=["F1", "Accuracy", "Loss"],
+            barmode="group",
+            text_auto=".3f",
+            labels={"value": "Mean score", "variable": "Metric", "method": "Method"},
+            title="F1, accuracy and loss across independent test seeds",
+        )
+        comparison_figure.update_yaxes(range=[0, 1])
+        st.plotly_chart(comparison_figure, use_container_width=True)
     else:
         st.warning("Run `python -m experiments.compare_methods` to generate the repeated comparison.")
         one = all_method_scores(data.states, data.events, data.config.seed)
