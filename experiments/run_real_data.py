@@ -17,7 +17,6 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.data_loader import load_price_csv
-from src.ml_inference import generate_diverse_corpus, predict_edge_scores, train_ml_network_model
 from src.preprocessing import preprocess_prices
 from src.response_score import build_srcs_matrix, event_evidence_table
 from src.shock_detector import detect_shocks, to_srcs_events
@@ -25,7 +24,6 @@ from src.shock_detector import detect_shocks, to_srcs_events
 
 def run_real_data(price_path: Path, market: str = "SPY", threshold: float = 2.5,
                   cooldown: int = 5, event_window: int = 5,
-                  use_ml: bool = True,
                   output_dir: Path = ROOT / "reports" / "results" / "real_data") -> dict[str, object]:
     output_dir.mkdir(parents=True, exist_ok=True)
     prices = load_price_csv(price_path)
@@ -35,24 +33,14 @@ def run_real_data(price_path: Path, market: str = "SPY", threshold: float = 2.5,
         raise RuntimeError("no shocks detected; lower threshold or provide a longer dataset")
     srcs_events = to_srcs_events(events)
     scores = build_srcs_matrix(standardized.to_numpy(), srcs_events, event_window)
-    ml_scores = None
-    ml_model = None
-    if use_ml:
-        training = generate_diverse_corpus(range(0, 30))
-        calibration = generate_diverse_corpus(range(100, 110))
-        ml_model, _ = train_ml_network_model(training, calibration)
-        ml_scores, _ = predict_edge_scores(ml_model.estimator, standardized.to_numpy(), srcs_events)
     pairs = []
     columns = list(standardized.columns)
     for i in range(len(columns)):
         for j in range(i + 1, len(columns)):
-            pairs.append({"company_a": columns[i], "company_b": columns[j],
-                          "srcs_score": scores[i, j],
-                          "ml_edge_probability": ml_scores[i, j] if ml_scores is not None else np.nan,
+            pairs.append({"company_a": columns[i], "company_b": columns[j], "score": scores[i, j],
                           "events_a": int((events.company_index == i).sum()),
                           "events_b": int((events.company_index == j).sum())})
-    rank_column = "ml_edge_probability" if use_ml else "srcs_score"
-    ranking = pd.DataFrame(pairs).sort_values(rank_column, ascending=False).reset_index(drop=True)
+    ranking = pd.DataFrame(pairs).sort_values("score", ascending=False).reset_index(drop=True)
     ranking.insert(0, "rank", np.arange(1, len(ranking) + 1))
     evidence = []
     case_pairs = pd.concat([ranking.head(2), ranking.tail(1)]).copy()
@@ -90,11 +78,6 @@ def run_real_data(price_path: Path, market: str = "SPY", threshold: float = 2.5,
                 "cooldown": cooldown, "event_window": event_window,
                 "observations": len(prices), "companies": columns,
                 "event_count": len(events), "verified_real_data": provenance_path.exists(),
-                "ml_enabled": use_ml,
-                "ml_model": "HistGradientBoostingClassifier" if use_ml else None,
-                "ml_training_seeds": list(range(0, 30)) if use_ml else [],
-                "ml_calibration_seeds": list(range(100, 110)) if use_ml else [],
-                "ml_probability_threshold": ml_model.threshold if ml_model else None,
                 "interpretation": "Ranked statistical evidence only; no causal or contractual claim."}
     if provenance_path.exists():
         metadata["provenance"] = json.loads(provenance_path.read_text(encoding="utf-8"))
@@ -107,9 +90,8 @@ def main() -> None:
     parser.add_argument("--prices", type=Path, default=ROOT / "data" / "real" / "us_large_caps_2022_2025.csv")
     parser.add_argument("--market", default="SPY")
     parser.add_argument("--threshold", type=float, default=2.5)
-    parser.add_argument("--skip-ml", action="store_true", help="rank by SRCS only")
     args = parser.parse_args()
-    result = run_real_data(args.prices, args.market, args.threshold, use_ml=not args.skip_ml)
+    result = run_real_data(args.prices, args.market, args.threshold)
     print(result["ranking"].head(10).to_string(index=False))
 
 

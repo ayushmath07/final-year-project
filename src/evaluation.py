@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
-from sklearn.metrics import average_precision_score, log_loss, roc_auc_score
+from sklearn.metrics import average_precision_score, roc_auc_score
 
 
 def _upper_values(matrix: np.ndarray) -> np.ndarray:
@@ -40,21 +40,12 @@ def precision_recall_f1(true_adjacency: np.ndarray, inferred_adjacency: np.ndarr
     precision = tp / (tp + fp) if tp + fp else 0.0
     recall = tp / (tp + fn) if tp + fn else 0.0
     f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0.0
-    accuracy = (tp + tn) / (tp + fp + fn + tn)
+    total = tp + fp + fn + tn
+    accuracy = (tp + tn) / total
+    loss = (fp + fn) / total
     return {"tp": tp, "fp": fp, "fn": fn, "tn": tn,
             "precision": precision, "recall": recall, "f1": f1,
-            "accuracy": accuracy}
-
-
-def probability_log_loss(true_adjacency: np.ndarray, probabilities: np.ndarray) -> float:
-    """Return binary log loss for an undirected edge-probability matrix."""
-    true = _validate_binary_adjacency(true_adjacency)
-    probabilities = np.asarray(probabilities, dtype=float)
-    if probabilities.shape != true.shape or not np.isfinite(probabilities).all():
-        raise ValueError("probabilities must be finite and match adjacency")
-    if np.any((probabilities < 0) | (probabilities > 1)):
-        raise ValueError("probabilities must be between zero and one")
-    return float(log_loss(_upper_values(true), _upper_values(probabilities), labels=[0, 1]))
+            "accuracy": accuracy, "loss": loss}
 
 
 def ranking_metrics(true_adjacency: np.ndarray, scores: np.ndarray) -> dict[str, float]:
