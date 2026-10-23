@@ -14,7 +14,7 @@ import streamlit as st
 
 from src.baselines import all_method_scores
 from src.data_loader import load_price_csv
-from src.evaluation import calibrate_threshold, precision_recall_f1
+from src.evaluation import calibrate_threshold, precision_recall_f1, probability_log_loss
 from src.ml_inference import generate_diverse_corpus, predict_edge_scores, train_ml_network_model
 from src.network_builder import threshold_scores
 from src.preprocessing import preprocess_prices
@@ -90,10 +90,11 @@ if page == "Project Overview":
 elif page == "Synthetic Experiment":
     st.title("Synthetic Experiment")
     metrics = precision_recall_f1(data.adjacency, inferred)
-    left, middle, right = st.columns(3)
+    left, middle, right, accuracy = st.columns(4)
     left.metric("Precision", f"{metrics['precision']:.3f}")
     middle.metric("Recall", f"{metrics['recall']:.3f}")
     right.metric("F1", f"{metrics['f1']:.3f}")
+    accuracy.metric("Accuracy", f"{metrics['accuracy']:.3f}")
     st.caption(f"Threshold {calibrated_threshold:.4f}, calibrated only on seeds 101–103; displayed network uses independent seed {seed}.")
     frame = pd.DataFrame(data.states, columns=[f"C{i}" for i in range(companies)])
     st.plotly_chart(px.line(frame, labels={"index": "Time", "value": "State", "variable": "Company"}), use_container_width=True)
@@ -125,8 +126,11 @@ elif page == "Inferred Network":
                               color_continuous_scale="Blues", title="ML edge-probability heatmap"),
                     use_container_width=True)
     st.dataframe(pd.DataFrame([
-        {"method": "SRCS", **precision_recall_f1(data.adjacency, inferred)},
-        {"method": "ML (HistGradientBoosting)", **precision_recall_f1(data.adjacency, ml_inferred)},
+        {"method": "SRCS", **precision_recall_f1(data.adjacency, inferred),
+         "log_loss": np.nan},
+        {"method": "ML (HistGradientBoosting)",
+         **precision_recall_f1(data.adjacency, ml_inferred),
+         "log_loss": probability_log_loss(data.adjacency, ml_scores)},
     ]), use_container_width=True)
     st.caption("The ML model was trained on seeds 0–23 and calibrated on seeds 100–107; the displayed seed is not used in fitting unless you choose one of those reserved seeds.")
 

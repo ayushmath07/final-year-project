@@ -17,7 +17,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.baselines import all_method_scores
-from src.evaluation import calibrate_threshold, precision_recall_f1, ranking_metrics
+from src.evaluation import (
+    calibrate_threshold,
+    precision_recall_f1,
+    probability_log_loss,
+    ranking_metrics,
+)
 from src.ml_inference import (
     FEATURE_COLUMNS,
     generate_diverse_corpus,
@@ -85,6 +90,10 @@ def run_comparison(output_dir: Path = ROOT / "reports" / "results" / "comparison
                    "threshold": thresholds[method]}
             row.update(precision_recall_f1(data.adjacency, inferred))
             row.update(ranking_metrics(data.adjacency, scores))
+            row["log_loss"] = (
+                probability_log_loss(data.adjacency, scores)
+                if method == ml_method else float("nan")
+            )
             rows.append(row)
             for rank, (i, j) in enumerate(sorted(pairs, key=lambda p: scores[p], reverse=True), 1):
                 rankings.append({"seed": data.config.seed, "method": method, "rank": rank,
@@ -95,6 +104,8 @@ def run_comparison(output_dir: Path = ROOT / "reports" / "results" / "comparison
         precision_mean=("precision", "mean"), precision_std=("precision", "std"),
         recall_mean=("recall", "mean"), recall_std=("recall", "std"),
         f1_mean=("f1", "mean"), f1_std=("f1", "std"),
+        accuracy_mean=("accuracy", "mean"), accuracy_std=("accuracy", "std"),
+        log_loss_mean=("log_loss", "mean"), log_loss_std=("log_loss", "std"),
         roc_auc_mean=("roc_auc", "mean"), pr_auc_mean=("pr_auc", "mean"),
     ).sort_values("f1_mean", ascending=False)
     raw.to_csv(output_dir / "method_results_raw.csv", index=False)

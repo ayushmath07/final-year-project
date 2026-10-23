@@ -3,6 +3,7 @@ import numpy as np
 from src.evaluation import (
     confusion_counts,
     precision_recall_f1,
+    probability_log_loss,
 )
 
 
@@ -44,6 +45,7 @@ def test_perfect_reconstruction_has_perfect_metrics():
     assert metrics["precision"] == 1.0
     assert metrics["recall"] == 1.0
     assert metrics["f1"] == 1.0
+    assert metrics["accuracy"] == 1.0
 
 
 def test_no_predicted_edges_have_zero_recall():
@@ -62,3 +64,21 @@ def test_no_predicted_edges_have_zero_recall():
     assert metrics["precision"] == 0.0
     assert metrics["recall"] == 0.0
     assert metrics["f1"] == 0.0
+    assert metrics["accuracy"] == 0.0
+
+
+def test_probability_log_loss_rewards_correct_probabilities():
+    true = np.array([
+        [0, 1, 0],
+        [1, 0, 1],
+        [0, 1, 0],
+    ])
+    good = np.array([
+        [0.0, 0.9, 0.1],
+        [0.9, 0.0, 0.8],
+        [0.1, 0.8, 0.0],
+    ])
+    bad = 1.0 - good
+    np.fill_diagonal(bad, 0.0)
+
+    assert probability_log_loss(true, good) < probability_log_loss(true, bad)
