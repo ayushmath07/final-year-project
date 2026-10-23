@@ -81,10 +81,12 @@ if page == "Project Overview":
 elif page == "Synthetic Experiment":
     st.title("Synthetic Experiment")
     metrics = precision_recall_f1(data.adjacency, inferred)
-    left, middle, right = st.columns(3)
-    left.metric("Precision", f"{metrics['precision']:.3f}")
-    middle.metric("Recall", f"{metrics['recall']:.3f}")
-    right.metric("F1", f"{metrics['f1']:.3f}")
+    precision_col, recall_col, f1_col, accuracy_col, loss_col = st.columns(5)
+    precision_col.metric("Precision", f"{metrics['precision']:.3f}")
+    recall_col.metric("Recall", f"{metrics['recall']:.3f}")
+    f1_col.metric("F1", f"{metrics['f1']:.3f}")
+    accuracy_col.metric("Accuracy", f"{metrics['accuracy']:.3f}")
+    loss_col.metric("Loss", f"{metrics['loss']:.3f}")
     st.caption(f"Threshold {calibrated_threshold:.4f}, calibrated only on seeds 101–103; displayed network uses independent seed {seed}.")
     frame = pd.DataFrame(data.states, columns=[f"C{i}" for i in range(companies)])
     st.plotly_chart(px.line(frame, labels={"index": "Time", "value": "State", "variable": "Company"}), use_container_width=True)
@@ -113,8 +115,22 @@ elif page == "Method Comparison":
     if result_path.exists():
         comparison = pd.read_csv(result_path)
         st.dataframe(comparison, use_container_width=True)
-        st.plotly_chart(px.bar(comparison, x="method", y="f1_mean", error_y="f1_std",
-                               title="F1 across independent test seeds"), use_container_width=True)
+        chart_data = comparison.rename(columns={
+            "f1_mean": "F1",
+            "accuracy_mean": "Accuracy",
+            "loss_mean": "Loss",
+        })
+        comparison_figure = px.bar(
+            chart_data,
+            x="method",
+            y=["F1", "Accuracy", "Loss"],
+            barmode="group",
+            text_auto=".3f",
+            labels={"value": "Mean score", "variable": "Metric", "method": "Method"},
+            title="F1, accuracy and loss across independent test seeds",
+        )
+        comparison_figure.update_yaxes(range=[0, 1])
+        st.plotly_chart(comparison_figure, use_container_width=True)
     else:
         st.warning("Run `python -m experiments.compare_methods` to generate the repeated comparison.")
         one = all_method_scores(data.states, data.events, data.config.seed)

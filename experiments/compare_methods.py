@@ -58,6 +58,8 @@ def run_comparison(output_dir: Path = ROOT / "reports" / "results" / "comparison
         precision_mean=("precision", "mean"), precision_std=("precision", "std"),
         recall_mean=("recall", "mean"), recall_std=("recall", "std"),
         f1_mean=("f1", "mean"), f1_std=("f1", "std"),
+        accuracy_mean=("accuracy", "mean"), accuracy_std=("accuracy", "std"),
+        loss_mean=("loss", "mean"), loss_std=("loss", "std"),
         roc_auc_mean=("roc_auc", "mean"), pr_auc_mean=("pr_auc", "mean"),
     ).sort_values("f1_mean", ascending=False)
     raw.to_csv(output_dir / "method_results_raw.csv", index=False)

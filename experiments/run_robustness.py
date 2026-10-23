@@ -57,6 +57,7 @@ def run_robustness(output_dir: Path = ROOT / "reports" / "results" / "robustness
     summary = raw.groupby(["experiment", "value"], as_index=False).agg(
         f1_mean=("f1", "mean"), f1_std=("f1", "std"),
         precision_mean=("precision", "mean"), recall_mean=("recall", "mean"),
+        accuracy_mean=("accuracy", "mean"), loss_mean=("loss", "mean"),
         roc_auc_mean=("roc_auc", "mean"), pr_auc_mean=("pr_auc", "mean"))
     raw.to_csv(output_dir / "robustness_raw.csv", index=False)
     summary.to_csv(output_dir / "robustness_summary.csv", index=False)
